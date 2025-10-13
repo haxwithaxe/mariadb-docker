@@ -5,9 +5,6 @@ on:
     - cron: "58 5 * * *"
   workflow_dispatch:
 
-env:
-  VERSION_CHECK_URL: https://www.clearskyinstitute.com/ham/HamClock/version.pl
-
 jobs:
   version-check:
     name: Compare Local and Upstream Versions
@@ -21,19 +18,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          fetch-tags: true
+          fetch-depth: 0
 
       - name: Get current version
         id: get_current_version
-        run: echo "current_version=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+        run: |
+          echo "Getting current version"
+          ls -A
+          git status
+          CURRENT_VERSION=$(git describe --tags --abbrev=0)
+          echo "Current version: $CURRENT_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Get upstream version
         id: get_upstream_version
         run: |
           set -e
-          DEBIAN_FRONTEND=noninteractive
-          apt-get update
-          echo "Getting version from apt"
-          UPSTREAM_VERSION=$(apt-get changelog mariadb-server 2>/dev/null | head -n 2 | tail -n 1 | cut -d ':' -f 2 | cut -d '-' -f 1)
+          echo "Getting upstream version"
+          UPSTREAM_VERSION=$(wget -q "https://launchpad.net/ubuntu/noble/amd64/mariadb-server" -O - | grep '<a href="/ubuntu/noble/amd64/mariadb-server' | head -n 1 | sed 's/.*">1://;s/-.*//')
           echo "Upstream version: $UPSTREAM_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "upstream_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
 
@@ -46,7 +50,7 @@ jobs:
           set -e
           echo "Current version: $CURRENT_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          if [ "$(printf '%s\n' "$CURRENT_VERSION" "$UPSTREAM_VERSION" | sort -V | tail -n 1)" == "$CURRENT_VERSION" ]; then
+          if [ "$(printf '%s\n' "$CURRENT_VERSION" "$UPSTREAM_VERSION" | sed 's/^v\+//' | sort -V | tail -n 1)" == "$CURRENT_VERSION" ]; then
               echo "Current version $CURRENT_VERSION is greater than or equal to Upstream version $UPSTREAM_VERSION."
               echo "No update required." >> $GITHUB_STEP_SUMMARY
               echo "update_required=false" >> $GITHUB_OUTPUT
@@ -61,10 +65,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
-          NEW_VERSION: ${{ steps.get_upstream_version.outputs.upstream_version }}
+          NEW_VERSION: ${{ steps.get_upstream_version.outputs.upstream_version }}.0
         with:
-          tag_name: v${{ steps.get_upstream_version.outputs.upstream_version }}
-          body_path: ./release-notes.md
+          tag_name: v${{ steps.get_upstream_version.outputs.upstream_version }}.0
+          body: MariaDB server version bump
           generate_release_notes: true
           append_body: true
           make_latest: true

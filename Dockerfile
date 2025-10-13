@@ -7,7 +7,7 @@ RUN groupadd -r mysql && useradd -r -g mysql mysql --home-dir /var/lib/mysql && 
 # add gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
 # gosu key is B42F6819007F00F88E364FD4036A9C25BF357DD4
-ENV GOSU_VERSION 1.17
+ENV GOSU_VERSION=1.17
 
 ARG GPG_KEYS=177F4010FE56CA3336300305F1656F24C74CD1D8
 # pub   rsa4096 2016-03-30 [SC]
@@ -64,7 +64,7 @@ RUN mkdir /docker-entrypoint-initdb.d
 
 # Ensure the container exec commands handle range of utf8 characters based of
 # default locales in base image (https://github.com/docker-library/docs/blob/135b79cc8093ab02e55debb61fdb079ab2dbce87/ubuntu/README.md#locales)
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # OCI annotations to image
 LABEL org.opencontainers.image.authors="haxwithaxe" \
@@ -89,7 +89,7 @@ RUN set -ex; \
 # postinst script creates a datadir, so avoid creating it by faking its existance.
 	mkdir -p /var/lib/mysql/mysql ; touch /var/lib/mysql/mysql/user.frm ; \
 # mariadb-backup is installed at the same time so that `mysql-common` is only installed once from just mariadb repos
-	apt-get install -y --no-install-recommends mariadb-server="$MARIADB_VERSION" mariadb-backup socat \
+	apt-get install -y --no-install-recommends mariadb-server mariadb-backup socat \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
 # purge and re-create /var/lib/mysql with appropriate ownership
