@@ -26,8 +26,6 @@ jobs:
         id: get_current_version
         run: |
           echo "Getting current version"
-          ls -A
-          git status
           CURRENT_VERSION=$(git describe --tags --abbrev=0)
           echo "Current version: $CURRENT_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
