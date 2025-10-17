@@ -48,7 +48,12 @@ jobs:
           set -e
           echo "Current version: $CURRENT_VERSION" >> $GITHUB_STEP_SUMMARY
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          if [ "$(printf '%s\n' "$CURRENT_VERSION" "$UPSTREAM_VERSION" | sed 's/^v\+//' | sort -V | tail -n 1)" == "$CURRENT_VERSION" ]; then
+          newest_version=$(printf '%s\n' "$CURRENT_VERSION" "$UPSTREAM_VERSION" | sed 's/^v\+//' | sort -V | tail -n 1)
+          if [ "$UPSTREAM_VERSION" == "10.11.13" ]; then  # 10.11.13 is immutable by accident
+              echo "Upstream version $UPSTREAM_VERSION is equal to an immutable release with equivalent tag v10.11.13-derp."
+              echo "No update required." >> $GITHUB_STEP_SUMMARY
+              echo "update_required=false" >> $GITHUB_OUTPUT
+          elif [ "$newest_version" == "$CURRENT_VERSION" ]; then
               echo "Current version $CURRENT_VERSION is greater than or equal to Upstream version $UPSTREAM_VERSION."
               echo "No update required." >> $GITHUB_STEP_SUMMARY
               echo "update_required=false" >> $GITHUB_OUTPUT
@@ -59,7 +64,7 @@ jobs:
           fi
 
       - name: Create Release
-        if: ${{ steps.compare_versions.outputs.update_required }}
+        if: ${{ steps.compare_versions.outputs.update_required == true }}
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
