@@ -42,7 +42,6 @@ _process_sql()
 		${def['file']:+--defaults-file=${def['file']}} \
 		${def['extra_file']:+--defaults-extra-file=${def['extra_file']}} \
 		${def['group_suffix']:+--defaults-group-suffix=${def['group_suffix']}} \
-		--skip-ssl --skip-ssl-verify-server-cert \
 		--protocol socket \
 		-B "$@"
 }
@@ -71,7 +70,6 @@ connect()
 		${def['file']:+--defaults-file=${def['file']}} \
 		${def['extra_file']:+--defaults-extra-file=${def['extra_file']}}  \
 		${def['group_suffix']:+--defaults-group-suffix=${def['group_suffix']}}  \
-		--skip-ssl --skip-ssl-verify-server-cert \
 		-h localhost --protocol tcp \
 		--skip-column-names --batch --skip-print-query-on-error \
 		-e 'select @@skip_networking' 2>&1)
@@ -229,11 +227,11 @@ replication()
 
 # mariadbupgrade
 #
-# Test the lock on the file $datadir/mariadb_upgrade_info
+# Test the lock on the file $datadir/mysql_upgrade_info
 # https://jira.mariadb.org/browse/MDEV-27068
 mariadbupgrade()
 {
-	local f="$datadir/mariadb_upgrade_info"
+	local f="$datadir/mysql_upgrade_info"
 	if [ -r "$f" ]; then
 		flock --exclusive --nonblock -n 9 9<"$f"
 		return $?

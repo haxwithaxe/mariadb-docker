@@ -123,7 +123,6 @@ docker_temp_server_start() {
 		--expire-logs-days=0 \
 		--skip-slave-start \
 		--loose-innodb_buffer_pool_load_at_startup=0 \
-		--skip-ssl --ssl-cert='' --ssl-key='' --ssl-ca='' \
 		&
 	declare -g MARIADB_PID
 	MARIADB_PID=$!
@@ -137,7 +136,6 @@ docker_temp_server_start() {
 	local i
 	for i in {30..0}; do
 		if docker_process_sql "${extraArgs[@]}" --database=mysql \
-			--skip-ssl --skip-ssl-verify-server-cert \
 			<<<'SELECT 1' &> /dev/null; then
 			break
 		fi
@@ -225,7 +223,7 @@ docker_create_db_directories() {
 }
 
 _mariadb_version() {
-	echo -n "11.8.3-MariaDB"
+	echo -n "10.11.14-MariaDB"
 }
 
 # initializes the database directory
@@ -574,8 +572,8 @@ docker_mariadb_backup_system()
 	fi
 	local backup_db="system_mysql_backup_unknown_version.sql.zst"
 	local oldfullversion="unknown_version"
-	if [ -r "$DATADIR"/mariadb_upgrade_info ]; then
-		read -r -d '' oldfullversion < "$DATADIR"/mariadb_upgrade_info || true
+	if [ -r "$DATADIR"/mysql_upgrade_info ]; then
+		read -r -d '' oldfullversion < "$DATADIR"/mysql_upgrade_info || true
 		if [ -n "$oldfullversion" ]; then
 			backup_db="system_mysql_backup_${oldfullversion}.sql.zst"
 		fi
@@ -640,14 +638,14 @@ EOSQL
 
 
 _check_if_upgrade_is_needed() {
-	if [ ! -f "$DATADIR"/mariadb_upgrade_info ]; then
+	if [ ! -f "$DATADIR"/mysql_upgrade_info ]; then
 		mysql_note "MariaDB upgrade information missing, assuming required"
 		return 0
 	fi
 	local mariadbVersion
 	mariadbVersion="$(_mariadb_version)"
 	IFS='.-' read -ra newversion <<<"$mariadbVersion"
-	IFS='.-' read -ra oldversion < "$DATADIR"/mariadb_upgrade_info || true
+	IFS='.-' read -ra oldversion < "$DATADIR"/mysql_upgrade_info || true
 
 	if [[ ${#newversion[@]} -lt 2 ]] || [[ ${#oldversion[@]} -lt 2 ]] \
 		|| [[ ${oldversion[0]} -lt ${newversion[0]} ]] \
